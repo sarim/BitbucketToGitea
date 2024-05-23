@@ -88,43 +88,11 @@ class GiteaRest {
 
     void migrateBitbucketRepo(BitbucketRepo bitbucketRepo, String bitbucketUser, String bitbucketPassword, boolean deleteRepoInDestination) {
 
-        log.info("Migrating BB Repo:" + bitbucketRepo.toString() + " " + bitbucketRepo.httpCloneLink)
+        log.info("Cloning BB Repo:" + bitbucketRepo.toString() + " " + bitbucketRepo.httpCloneLink)
+        String path = sanitizeName( bitbucketRepo.project.name + "_" + bitbucketRepo.name )
+        File cloneDir = LocalGit.cloneRemote(bitbucketRepo.httpCloneLink, bitbucketUser, bitbucketPassword, false, path )
 
-
-
-        GiteaOrg giteaOrg = getOrgs().find { it.username == sanitizeName( bitbucketRepo.project.name) } ?: createOrg(new GiteaOrg(description: bitbucketRepo.project.description, fullName: bitbucketRepo.project.name, repoAdminChangeTeamAccess: true, username: sanitizeName( bitbucketRepo.project.name), visibility: "private"))
-
-
-        GiteaRepo giteaRepo = getRepo(giteaOrg.username, bitbucketRepo.name)
-
-        if (!giteaRepo) {
-            giteaRepo = createRepo(giteaOrg.username, bitbucketRepo.name, bitbucketRepo.description)
-        } else {
-
-            log.warn("Git repo already exists:" + giteaRepo.htmlUrl)
-            if (deleteRepoInDestination) {
-                log.warn("\tDeleting duplicate repo, and creating a new one")
-                deleteRepo(giteaRepo.owner.username, giteaRepo.name)
-                giteaRepo = createRepo(giteaOrg.username, bitbucketRepo.name, bitbucketRepo.description)
-
-            }
-        }
-
-
-        log.info("\tUsing gitea repo:" + giteaRepo.toString())
-
-        File tempDir = LocalGit.mirrorRemote(bitbucketRepo.httpCloneLink, bitbucketUser, bitbucketPassword, true, giteaRepo.cloneUrl)
-
-        log.info("\tDownloaded BB repo to : file:///" + tempDir.absolutePath)
-
-        assert LocalGit.pushAll(tempDir, username, this.token): "Error pushing to new Gitea Repo"
-
-
-        assert tempDir.deleteDir(): "Error deleting temp dir:" + tempDir.absolutePath
-
-        log.info("\tFinished migrating to:" + giteaRepo.toString())
-
-        ""
+        log.info("\tDownloaded BB repo to : file:///" + cloneDir.absolutePath)
 
     }
 
@@ -419,9 +387,9 @@ class LocalGit {
 
     }
 
-    static File mirrorRemote(String url, String userName, String password, boolean removeRemotes = true, String newRemote = "") {
+    static File cloneRemote(String url, String userName, String password, boolean removeRemotes = true, String path = "") {
 
-        File tempDir = File.createTempDir()
+        File tempDir = new File(path)
         log.info("Mirroring repo to file:///" + tempDir.absolutePath)
         try {
 
@@ -443,12 +411,11 @@ class LocalGit {
 
             assert lsfFetchOut.success
 
-            git.remoteList().call().each { remote ->
-                git.remoteRemove().setRemoteName(remote.name).call()
-
+            if (removeRemotes) {
+                git.remoteList().call().each { remote ->
+                    git.remoteRemove().setRemoteName(remote.name).call()
+                }
             }
-
-            git.remoteAdd().setName("origin").setUri(new URIish(newRemote)).call()
 
             log.info("Mirrored repo to file:///" + tempDir.absolutePath)
             return tempDir
