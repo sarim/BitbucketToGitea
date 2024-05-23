@@ -12,6 +12,10 @@ changed in the destination the push should succeed.
  * Groovy
    * Ideally execute this in en environment that uses the pom.xml file to resolve dependencies, such as Intellij
 
+## RUN FROM CLI:
+ * `mvn clean prepare-package`
+ * `run.sh`
+
 
 ## Known issues:
  1. Cloning empty bitbucket repos does not fail gracefully
