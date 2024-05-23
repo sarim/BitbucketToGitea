@@ -192,7 +192,7 @@ class GiteaRest {
 
     static String sanitizeName(String name) {
 
-        return name.replaceAll(" " , "_").replaceAll(", ", " ").replaceAll(",", "")
+        return "bbold_" + name.toLowerCase().replaceAll(" ", "_").replaceAll(", ", " ").replaceAll(",", "")
 
     }
 
