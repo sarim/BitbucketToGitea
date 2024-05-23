@@ -333,8 +333,8 @@ class LocalGit {
             assert tagsOut.success: "Error pusing tags to ${remote.name}"
 
 
-            BashOutput lfsOut = runBash("git lfs push --all origin", dir)
-            assert lfsOut.success: "Error pushing lfs to ${remote.name}"
+            // BashOutput lfsOut = runBash("git lfs push --all origin", dir)
+            // assert lfsOut.success: "Error pushing lfs to ${remote.name}"
 
 
         }
